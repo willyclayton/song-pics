@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Song Pics</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main id="stage" aria-live="off">
+      <div id="picture" class="picture"></div>
+      <div id="word" class="word">Song Pics</div>
+      <div id="line" class="line">Pick a song to see every word as a picture.</div>
+    </main>
+
+    <div id="yt" class="yt"></div>
+
+    <footer id="bar" class="bar" hidden>
+      <button id="playBtn" class="round" aria-label="Play">▶</button>
+      <span id="clock" class="clock">0:00</span>
+      <input id="seek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Position" />
+      <div class="sync" title="Shift the lyrics if the pictures run early or late">
+        <button id="earlier" aria-label="Lyrics earlier">−</button>
+        <span id="offset">sync 0.0s</span>
+        <button id="later" aria-label="Lyrics later">+</button>
+      </div>
+      <label class="toggle"><input id="photos" type="checkbox" /> Photos</label>
+      <button id="change">Change song</button>
+    </footer>
+
+    <dialog id="setup">
+      <h1>Song Pics</h1>
+      <p class="sub">Play a song and watch each word turn into a picture.</p>
+
+      <h2>1. Find the lyrics</h2>
+      <form id="searchForm" class="row">
+        <input id="query" placeholder="Song and artist, e.g. come sail away styx" autocomplete="off" required />
+        <button>Search</button>
+      </form>
+      <ul id="results" class="results"></ul>
+      <details>
+        <summary>Or paste timed lyrics (.lrc)</summary>
+        <textarea id="lrcText" rows="5" placeholder="[00:12.30] First line of the song&#10;[00:16.80] Second line"></textarea>
+      </details>
+      <p id="picked" class="picked"></p>
+
+      <h2>2. Choose the audio</h2>
+      <div class="row">
+        <input id="ytUrl" placeholder="Paste a YouTube link to the song" autocomplete="off" />
+      </div>
+      <div class="row">
+        <label class="file">or an audio file from this device <input id="file" type="file" accept="audio/*" /></label>
+      </div>
+      <p class="hint">Leave both empty to run the pictures on a timer with no sound.</p>
+
+      <p id="error" class="error" role="alert"></p>
+      <div class="row end">
+        <button id="demo" type="button" class="ghost">Try the demo</button>
+        <button id="start" type="button" class="primary">Start</button>
+      </div>
+    </dialog>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
