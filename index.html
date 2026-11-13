@@ -15,6 +15,8 @@
 
     <div id="yt" class="yt"></div>
 
+    <p id="notice" class="notice" role="status" hidden></p>
+
     <footer id="bar" class="bar" hidden>
       <button id="playBtn" class="round" aria-label="Play">▶</button>
       <span id="clock" class="clock">0:00</span>
@@ -23,40 +25,45 @@
         <button id="earlier" aria-label="Lyrics earlier">−</button>
         <span id="offset">sync 0.0s</span>
         <button id="later" aria-label="Lyrics later">+</button>
+        <button id="tap" title="Tap the moment a new line starts being sung and the lyrics snap to it">Tap sync</button>
       </div>
       <label class="toggle"><input id="photos" type="checkbox" /> Photos</label>
+      <button id="next" hidden title="Try a different recording of this song">Other version</button>
       <button id="change">Change song</button>
+      <span id="match" class="match"></span>
     </footer>
 
     <dialog id="setup">
       <h1>Song Pics</h1>
-      <p class="sub">Play a song and watch each word turn into a picture.</p>
+      <p class="sub">Pick a song and watch each word turn into a picture.</p>
 
-      <h2>1. Find the lyrics</h2>
       <form id="searchForm" class="row">
-        <input id="query" placeholder="Song and artist, e.g. come sail away styx" autocomplete="off" required />
-        <button>Search</button>
+        <input id="query" placeholder="Search for a song, e.g. come sail away styx" autocomplete="off" required />
+        <button class="primary">Search</button>
       </form>
+      <p id="status" class="status" role="status"></p>
       <ul id="results" class="results"></ul>
+
       <details>
-        <summary>Or paste timed lyrics (.lrc)</summary>
-        <textarea id="lrcText" rows="5" placeholder="[00:12.30] First line of the song&#10;[00:16.80] Second line"></textarea>
+        <summary>Other ways to play</summary>
+        <p class="hint">Fill one of these in before picking a song to use your own audio instead of the automatic match.</p>
+        <div class="row"><input id="ytUrl" placeholder="YouTube link" autocomplete="off" /></div>
+        <div class="row"><label class="file">or an audio file <input id="file" type="file" accept="audio/*" /></label></div>
+        <textarea id="lrcText" rows="4" placeholder="Or paste timed lyrics (.lrc):&#10;[00:12.30] First line of the song"></textarea>
+        <div class="row end"><button id="playLrc" type="button">Play pasted lyrics</button></div>
       </details>
-      <p id="picked" class="picked"></p>
+      <details>
+        <summary>Settings</summary>
+        <p class="hint">
+          Finding the audio automatically needs a free YouTube Data API key
+          (<a href="https://developers.google.com/youtube/v3/getting-started" target="_blank" rel="noopener">how to get one</a>).
+          It is saved in this browser only.
+        </p>
+        <div class="row"><input id="ytKey" placeholder="YouTube Data API key" autocomplete="off" /></div>
+      </details>
 
-      <h2>2. Choose the audio</h2>
-      <div class="row">
-        <input id="ytUrl" placeholder="Paste a YouTube link to the song" autocomplete="off" />
-      </div>
-      <div class="row">
-        <label class="file">or an audio file from this device <input id="file" type="file" accept="audio/*" /></label>
-      </div>
-      <p class="hint">Leave both empty to run the pictures on a timer with no sound.</p>
-
-      <p id="error" class="error" role="alert"></p>
       <div class="row end">
         <button id="demo" type="button" class="ghost">Try the demo</button>
-        <button id="start" type="button" class="primary">Start</button>
       </div>
     </dialog>
 

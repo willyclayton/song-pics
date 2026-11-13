@@ -1,9 +1,15 @@
-import { searchLyrics, parseLRC, buildWords, wordAt } from './lyrics.js';
+import { parseLRC, buildWords, wordAt } from './lyrics.js';
 import { TimerSource, FileSource, YouTubeSource, youTubeId } from './players.js';
 import { loadEmoji, pictureFor, cachedPhoto, prefetchPhotos } from './visuals.js';
+import { searchSongs, findLyrics, findVideos, rankPairs, youTubeKey } from './finder.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const el = (tag, props = {}, ...kids) => {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...kids);
+  return node;
+};
 
 // An original little song so the app can be tried without looking anything up.
 const DEMO_LRC = `[00:01.00] I am sailing away on a boat
@@ -18,8 +24,10 @@ let words = [];
 let source = new TimerSource();
 let offset = 0; // seconds; positive = lyrics later
 let current = -2;
-let pickedLrc = null;
 let scrubbing = false;
+let candidates = []; // ranked { video, lyrics, diff } pairs for the chosen song
+let candidateIdx = 0;
+let loadId = 0; // guards against a slow lookup finishing after a newer one started
 
 // ---------- stage ----------
 
@@ -34,11 +42,7 @@ function renderLine(lineIdx, wordIdx) {
   const line = lines[lineIdx];
   const frag = document.createDocumentFragment();
   for (let i = line.first; i <= line.last; i++) {
-    const span = document.createElement('span');
-    span.textContent = words[i].text + ' ';
-    if (i < wordIdx) span.className = 'past';
-    if (i === wordIdx) span.className = 'now';
-    frag.append(span);
+    frag.append(el('span', { textContent: words[i].text + ' ', className: i < wordIdx ? 'past' : i === wordIdx ? 'now' : '' }));
   }
   $('line').replaceChildren(frag);
 }
@@ -91,19 +95,28 @@ function tick() {
 
 // ---------- controls ----------
 
+function setOffset(value) {
+  offset = Math.round(value * 100) / 100;
+  $('offset').textContent = `sync ${offset > 0 ? '+' : ''}${offset.toFixed(1)}s`;
+  current = -2;
+}
+
 $('playBtn').onclick = () => (source.playing ? source.pause() : source.play());
 $('seek').oninput = () => (scrubbing = true);
 $('seek').onchange = () => {
   source.seek(Number($('seek').value));
   scrubbing = false;
 };
-const nudge = (d) => {
-  offset = Math.round((offset + d) * 10) / 10;
-  $('offset').textContent = `sync ${offset > 0 ? '+' : ''}${offset.toFixed(1)}s`;
-  current = -2;
+$('earlier').onclick = () => setOffset(offset - 0.1);
+$('later').onclick = () => setOffset(offset + 0.1);
+
+// Tap as a line starts being sung: the nearest lyric line snaps to this moment.
+$('tap').onclick = () => {
+  if (!lines.length) return;
+  const t = source.time;
+  const near = lines.reduce((a, b) => (Math.abs(b.time + offset - t) < Math.abs(a.time + offset - t) ? b : a));
+  setOffset(t - near.time);
 };
-$('earlier').onclick = () => nudge(-0.1);
-$('later').onclick = () => nudge(0.1);
 $('photos').onchange = () => {
   if ($('photos').checked) prefetchPhotos(words.map((w) => w.key));
   current = -2;
@@ -112,86 +125,168 @@ $('change').onclick = () => {
   source.pause();
   $('setup').showModal();
 };
+$('next').onclick = () => playCandidate(candidateIdx + 1);
 document.addEventListener('keydown', (e) => {
   if ($('setup').open || e.target.matches('input, textarea, button')) return;
   if (e.code === 'Space') {
     e.preventDefault();
     $('playBtn').click();
   }
-  if (e.key === '[') nudge(-0.1);
-  if (e.key === ']') nudge(0.1);
+  if (e.key === '[') setOffset(offset - 0.1);
+  if (e.key === ']') setOffset(offset + 0.1);
+  if (e.key === 't') $('tap').click();
 });
 
-// ---------- setup dialog ----------
+// ---------- loading a song ----------
 
-$('searchForm').onsubmit = async (e) => {
-  e.preventDefault();
-  const list = $('results');
-  $('error').textContent = '';
-  list.replaceChildren(Object.assign(document.createElement('li'), { textContent: 'Searching…' }));
-  try {
-    const hits = await searchLyrics($('query').value);
-    list.replaceChildren();
-    if (!hits.length) list.append(Object.assign(document.createElement('li'), { textContent: 'No timed lyrics found for that. Try adding the artist.' }));
-    for (const hit of hits) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      const name = document.createElement('span');
-      name.textContent = `${hit.title} — ${hit.artist}`;
-      const meta = document.createElement('small');
-      meta.textContent = fmt(hit.duration || 0);
-      btn.append(name, meta);
-      btn.onclick = () => {
-        pickedLrc = hit.lrc;
-        $('lrcText').value = '';
-        list.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b === btn));
-        $('picked').textContent = `Lyrics: ${hit.title} — ${hit.artist}`;
-      };
-      const li = document.createElement('li');
-      li.append(btn);
-      list.append(li);
-    }
-  } catch (err) {
-    list.replaceChildren();
-    $('error').textContent = `${err.message}. Check your connection and try again.`;
-  }
+const status = (msg, isError = false) => {
+  $('status').textContent = msg;
+  $('status').classList.toggle('error', isError);
+};
+const notice = (msg) => {
+  $('notice').textContent = msg;
+  $('notice').hidden = !msg;
 };
 
 async function begin(lrc, makeSource) {
   const parsed = parseLRC(lrc);
   const built = buildWords(parsed);
-  if (!built.length) throw new Error('Those lyrics have no timestamps. Pick a search result or paste .lrc text.');
+  if (!built.length) throw new Error('Those lyrics have no timestamps.');
   const next = makeSource();
   if (next.ready) await next.ready;
   source.destroy();
   source = next;
   lines = parsed;
   words = built;
-  current = -2;
-  offset = 0;
-  nudge(0);
+  setOffset(0);
   if ($('photos').checked) prefetchPhotos(words.map((w) => w.key));
   $('bar').hidden = false;
   $('setup').close();
   await source.play()?.catch?.(() => {}); // autoplay may be blocked; the play button still works
 }
 
-$('start').onclick = async () => {
-  $('error').textContent = '';
+// Plays one ranked lyrics+video pair, moving on to the next if YouTube refuses to embed it.
+async function playCandidate(i) {
+  if (!candidates.length) return;
+  candidateIdx = i % candidates.length;
+  const c = candidates[candidateIdx];
+  const mine = loadId;
+  const skip = () => {
+    if (mine !== loadId) return;
+    if (candidateIdx + 1 < candidates.length) playCandidate(candidateIdx + 1);
+    else notice("YouTube won't let any version of this song play on other sites. Use Change song → Other ways to play.");
+  };
   try {
-    const lrc = $('lrcText').value.trim() || pickedLrc;
-    if (!lrc) throw new Error('Search for a song and pick a result first (or paste timed lyrics).');
+    await begin(c.lyrics.lrc, () => new YouTubeSource(c.video.id, $('yt'), skip));
+  } catch (err) {
+    return; // skip() already ran from the player's error event
+  }
+  $('next').hidden = candidates.length < 2;
+  $('match').textContent = `${c.video.channel} · audio ${fmt(c.video.duration)} · lyrics ${fmt(c.lyrics.duration)}`;
+  notice(
+    c.diff > 3
+      ? `This audio and the lyrics differ by ${Math.round(c.diff)}s, so they are probably different recordings and the timing may drift. Try "Other version" or "Tap sync".`
+      : '',
+  );
+}
+
+async function playSong(song) {
+  const mine = ++loadId;
+  try {
+    status(`Finding lyrics for ${song.title}…`);
+    const lyrics = await findLyrics(song);
+    if (mine !== loadId) return;
+    if (!lyrics.length) return status(`No timed lyrics exist yet for "${song.title}". Try another version of it from the list.`, true);
+
+    // A link or file given under "Other ways to play" overrides the automatic audio.
     const url = $('ytUrl').value.trim();
     const file = $('file').files[0];
-    const id = url ? youTubeId(url) : null;
-    if (url && !id) throw new Error("That doesn't look like a YouTube link.");
-    await begin(lrc, () => (id ? new YouTubeSource(id, $('yt')) : file ? new FileSource(file) : new TimerSource()));
+    const key = youTubeKey();
+    let videos = [];
+    if (url && !youTubeId(url)) return status("That doesn't look like a YouTube link.", true);
+    if (!url && !file && key) {
+      status('Finding the matching audio…');
+      try {
+        videos = await findVideos(song, key);
+      } catch (err) {
+        notice(`Couldn't search YouTube: ${err.message}`);
+      }
+      if (mine !== loadId) return;
+    }
+
+    candidates = rankPairs(song, videos, lyrics);
+    $('next').hidden = true;
+    $('match').textContent = `${song.title} — ${song.artist}`;
+    status('');
+    if (candidates[0]?.video) return playCandidate(0);
+
+    // No automatic audio: use the user's own, or run silently on a timer.
+    const best = rankPairs(song, [], lyrics)[0].lyrics;
+    candidates = [];
+    await begin(best.lrc, () => (url ? new YouTubeSource(youTubeId(url), $('yt')) : file ? new FileSource(file) : new TimerSource()));
+    if (!url && !file && !$('notice').textContent) {
+      notice(key ? 'No playable YouTube audio found for this song, so it is running silently.' : 'Running silently. Add a YouTube key under Change song → Settings to get the audio automatically.');
+    } else if (url || file) notice('');
   } catch (err) {
-    $('error').textContent = err.message;
+    if (mine === loadId) status(err.message, true);
+  }
+}
+
+// ---------- setup dialog ----------
+
+$('searchForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const list = $('results');
+  status('Searching…');
+  try {
+    const songs = await searchSongs($('query').value);
+    status(songs.length ? '' : 'No songs found. Try adding the artist.');
+    list.replaceChildren(
+      ...songs.map((song) => {
+        const btn = el(
+          'button',
+          { type: 'button' },
+          el('img', { src: song.art, alt: '', width: 40, height: 40 }),
+          el('span', {}, el('b', { textContent: song.title }), el('small', { textContent: `${song.artist} · ${song.album}` })),
+          el('small', { textContent: fmt(song.duration) }),
+        );
+        btn.onclick = () => playSong(song);
+        return el('li', {}, btn);
+      }),
+    );
+  } catch (err) {
+    list.replaceChildren();
+    status(`Song search failed: ${err.message}. Check your connection and try again.`, true);
   }
 };
 
-$('demo').onclick = () => begin(DEMO_LRC, () => new TimerSource());
+$('playLrc').onclick = async () => {
+  try {
+    loadId++;
+    const url = $('ytUrl').value.trim();
+    const file = $('file').files[0];
+    if (url && !youTubeId(url)) throw new Error("That doesn't look like a YouTube link.");
+    candidates = [];
+    $('next').hidden = true;
+    $('match').textContent = '';
+    notice('');
+    await begin($('lrcText').value, () => (url ? new YouTubeSource(youTubeId(url), $('yt')) : file ? new FileSource(file) : new TimerSource()));
+  } catch (err) {
+    status(err.message, true);
+  }
+};
+
+$('ytKey').value = localStorage.getItem('songpics.ytkey') || '';
+$('ytKey').onchange = () => localStorage.setItem('songpics.ytkey', $('ytKey').value.trim());
+
+$('demo').onclick = () => {
+  loadId++;
+  candidates = [];
+  $('next').hidden = true;
+  $('match').textContent = 'Demo song';
+  notice('');
+  begin(DEMO_LRC, () => new TimerSource());
+};
 
 await loadEmoji();
 $('setup').showModal();

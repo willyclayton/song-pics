@@ -66,7 +66,7 @@ body {
 .line .past { color: #c9cde6; }
 .line .now { color: var(--accent); font-weight: 700; }
 
-.yt { position: fixed; right: 12px; bottom: 76px; border-radius: 12px; overflow: hidden; line-height: 0; }
+.yt { position: fixed; right: 12px; top: 12px; border-radius: 12px; overflow: hidden; line-height: 0; }
 .yt:empty { display: none; }
 
 .bar {
@@ -118,10 +118,20 @@ dialog h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; 
 .row input:not([type="file"]) { flex: 1; min-width: 0; }
 .row.end { justify-content: flex-end; margin-top: 18px; }
 .file { color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; }
-.results { list-style: none; margin: 8px 0 0; padding: 0; max-height: 190px; overflow: auto; }
-.results button { width: 100%; text-align: left; margin-bottom: 4px; display: flex; justify-content: space-between; gap: 12px; }
-.results button[aria-pressed="true"] { border-color: var(--accent); }
+.results { list-style: none; margin: 8px 0 0; padding: 0; overflow: auto; }
+.results { max-height: 300px; }
+.results button { width: 100%; text-align: left; margin-bottom: 4px; display: flex; align-items: center; gap: 12px; padding: 6px 10px; }
+.results img { border-radius: 6px; flex: none; }
+.results span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.results span * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .results small { color: var(--muted); white-space: nowrap; }
+.status { color: var(--accent); margin: 8px 0 0; min-height: 1.4em; }
+.status.error { color: #ff8a8a; }
+.notice { margin: 0; padding: 8px 16px; background: #3a2f10; color: #ffe29a; font-size: 14px; text-align: center; }
+.notice[hidden] { display: none; }
+.match { color: var(--muted); font-size: 13px; flex-basis: 100%; }
+.match:empty { display: none; }
+dialog a { color: var(--accent); }
 details { margin-top: 8px; color: var(--muted); }
 textarea { width: 100%; margin-top: 8px; resize: vertical; font-family: ui-monospace, monospace; font-size: 13px; }
 .picked { color: var(--accent); margin: 8px 0 0; min-height: 1.4em; }

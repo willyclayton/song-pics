@@ -30,3 +30,23 @@ test('syllables and YouTube ids', () => {
   assert.equal(youTubeId('https://youtu.be/dQw4w9WgXcQ'), 'dQw4w9WgXcQ');
   assert.equal(youTubeId('nope'), null);
 });
+
+import { rankPairs, isoSeconds } from '../js/finder.js';
+
+test('pairs the studio video with lyrics of the same length', () => {
+  const song = { title: 'Come Sail Away', artist: 'Styx', duration: 367 };
+  const lyrics = [{ id: 1, duration: 361 }, { id: 2, duration: 367 }, { id: 3, duration: 186 }];
+  const videos = [
+    { id: 'mv', title: 'Styx - Come Sail Away (Official Video)', channel: 'StyxVEVO', studio: false, duration: 361 },
+    { id: 'live', title: 'Styx - Come Sail Away (Live)', channel: 'Styx', studio: false, duration: 367 },
+    { id: 'topic', title: 'Come Sail Away', channel: 'Styx - Topic', studio: true, duration: 367 },
+    { id: 'other', title: 'Babe', channel: 'Styx - Topic', studio: true, duration: 367 },
+  ];
+  const ranked = rankPairs(song, videos, lyrics);
+  assert.deepEqual(ranked.map((c) => c.video.id), ['topic', 'mv']);
+  assert.equal(ranked[0].lyrics.id, 2);
+  assert.equal(ranked[1].lyrics.id, 1);
+  assert.equal(rankPairs(song, [], lyrics)[0].lyrics.id, 2);
+  assert.equal(isoSeconds('PT6M7S'), 367);
+  assert.equal(isoSeconds('PT1H2S'), 3602);
+});

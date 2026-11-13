@@ -86,7 +86,7 @@ function loadYouTubeApi() {
 
 // The official embedded YouTube player: the song streams from YouTube, nothing is downloaded.
 export class YouTubeSource {
-  constructor(videoId, mount) {
+  constructor(videoId, mount, onError) {
     this.mount = mount;
     this.lastValue = 0;
     this.lastStamp = performance.now();
@@ -104,7 +104,11 @@ export class YouTubeSource {
             events: {
               onReady: () => resolve(),
               onStateChange: (e) => (this.state = e.data),
-              onError: (e) => reject(new Error(`YouTube can't play this video here (error ${e.data}). Try another upload of the song.`)),
+              onError: (e) => {
+                const err = new Error(`YouTube can't play this video here (error ${e.data}).`);
+                reject(err);
+                onError?.(err); // embedding blocks only show up once playback starts
+              },
             },
           });
         }),
