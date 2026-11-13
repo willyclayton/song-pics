@@ -7,13 +7,13 @@
 // out on purpose: the app shows those as big text instead of forcing a loosely related photo.
 
 export const CONCEPTS = `
-# people
-i, me, my, mine, myself, i'm, i'll, i've, i'd, im, i'ma : Selfie
+# people (pronouns use anonymous silhouettes so they read as "a person", not someone in particular)
+i, me, my, mine, myself, i'm, i'll, i've, i'd, im, i'ma : File:Sunset silhouette of man (Unsplash).jpg
 you, your, yours, yourself, you're, you'll, you've, you'd, ya, u : Uncle Sam
-we, us, our, we're, we'll, we've, we'd, together : Holding hands
+we, us, our, we're, we'll, we've, we'd, together : File:Orange sunset celebration (Unsplash).jpg
 they, them, their, they're, people, everybody, everyone, crowd, y'all : Crowd
-he, him, his, he's, he'll, man, men, guy, mr : Man
-she, her, she's, she'll, woman, women, lady, ladies : Woman
+he, him, his, he's, he'll, man, men, guy, mr : File:Man standing beach silhouette (Unsplash).jpg
+she, her, she's, she'll, woman, women, lady, ladies : File:Silhouette woman standing sunset (Unsplash).jpg
 boy, son : Boy
 girl : Girl
 baby, babe, born : Infant
