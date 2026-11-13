@@ -25,8 +25,8 @@ async function api(host, params) {
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(url, { headers: UA });
     if (res.ok) return res.json();
-    if (attempt === 3) throw new Error(`${res.status} for ${url}`);
-    await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+    if (attempt === 6) throw new Error(`${res.status} for ${url}`);
+    await new Promise((r) => setTimeout(r, 10000 * (attempt + 1)));
   }
 }
 
@@ -81,7 +81,7 @@ for (const subject of order) {
       continue;
     }
     let res;
-    for (let attempt = 0; attempt < 6; attempt++) {
+    for (let attempt = 0; attempt < 12; attempt++) {
       res = await fetch(found[subject].src, { headers: UA });
       if (res.status !== 429) break;
       await sleep((Number(res.headers.get('retry-after')) || 10) * 1000 + 1000);
@@ -90,12 +90,17 @@ for (const subject of order) {
       console.warn(`Download failed (${res.status}): ${subject}`);
       continue;
     }
-    await sharp(Buffer.from(await res.arrayBuffer()))
-      .flatten({ background: '#ffffff' })
-      .resize(SIZE, SIZE, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 72, mozjpeg: true })
-      .toFile(path.pathname);
-    await sleep(700);
+    try {
+      await sharp(Buffer.from(await res.arrayBuffer()), { failOn: 'none' })
+        .flatten({ background: '#ffffff' })
+        .resize(SIZE, SIZE, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 72, mozjpeg: true })
+        .toFile(path.pathname);
+    } catch (err) {
+      console.warn(`Could not convert ${subject}: ${err.message}`);
+      continue;
+    }
+    await sleep(1500);
   }
   images.push({ src: `pictures/${file}`, credit: found[subject].credit, subject });
 }
