@@ -24,6 +24,8 @@ let words = [];
 let source = new TimerSource();
 let offset = 0; // seconds; positive = lyrics later
 let current = -2;
+let scenes = []; // [{ start, photo }] in time order
+let sceneIdx = -2;
 let scrubbing = false;
 let candidates = []; // ranked { video, lyrics, diff } pairs for the chosen song
 let candidateIdx = 0;
@@ -32,31 +34,67 @@ let loadId = 0; // guards against a slow lookup finishing after a newer one star
 // ---------- stage ----------
 
 function showIdle(text = '') {
-  $('stage').classList.remove('text');
   $('word').textContent = '';
   $('line').textContent = text;
 }
 
-function setPicture(img, credit) {
-  const box = $('picture');
-  if (box.firstChild !== img) {
-    box.replaceChildren(img);
-    box.classList.remove('pop');
-    void box.offsetWidth; // restart the animation
-    box.classList.add('pop');
-  }
-  $('credit').href = credit;
-  $('stage').classList.remove('text');
+// ---------- scenes: the photo track ----------
+// Photos don't flip on every word. Each line of the song is planned as a short sequence of
+// scenes: it opens on its first picturable word's photo and moves on at each later one, each
+// held for a minimum time so nothing flashes by. Scenes cross-fade and drift slowly, so the pictures read
+// as a continuous story while the caption carries the individual words.
+
+const MIN_HOLD = 1.1; // seconds a scene stays before another may replace it
+const LEAD = 0.25; // start fading in this long before the word, so it lands on the word
+
+function buildScenes() {
+  const plan = [];
+  lines.forEach((line) => {
+    if (line.first === undefined) return;
+    let opened = false;
+    for (let i = line.first; i <= line.last; i++) {
+      const pic = pictureFor(words[i].key);
+      if (pic.kind !== 'photo') continue;
+      // A line's first photo arrives as the line begins; later ones arrive with their word.
+      const wanted = (opened ? words[i].start : words[line.first].start) - LEAD;
+      const prev = plan.at(-1);
+      opened = true;
+      if (prev && prev.photo.src === pic.photo.src) continue;
+      // Wait out the previous scene's minimum hold; skip this photo if its word would be over by then.
+      const start = prev ? Math.max(wanted, prev.start + MIN_HOLD) : wanted;
+      if (start > words[i].end) continue;
+      plan.push({ start, photo: pic.photo });
+    }
+  });
+  scenes = plan;
+  sceneIdx = -2;
 }
 
-// Big centred word over the blurred previous photo, for words that have no photo of their own.
-function setCard(word, emoji, glue) {
-  $('cardEmoji').textContent = emoji ?? '';
-  $('cardWord').textContent = word;
-  // Size the word to fit the screen width on one line.
-  $('cardWord').style.fontSize = `min(${glue ? 9 : 15}vh, ${(150 / Math.max(word.length, 3)).toFixed(1)}vw)`;
-  $('card').classList.toggle('glue', glue);
-  $('stage').classList.add('text');
+function sceneAt(t) {
+  let lo = 0;
+  let hi = scenes.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (scenes[mid].start <= t) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  return hi;
+}
+
+let front = 0; // which of the two stacked layers is showing
+function showScene(scene) {
+  const img = readyPhoto(scene.photo);
+  if (!img) return false; // still downloading: stay on the current scene and retry next frame
+  const layers = [$('layerA'), $('layerB')];
+  if (layers[front].firstChild !== img) {
+    front = 1 - front;
+    layers[front].replaceChildren(img); // re-inserting restarts the slow drift
+    layers[front].classList.add('on');
+    layers[1 - front].classList.remove('on');
+  }
+  $('credit').href = scene.photo.credit;
+  $('credit').hidden = false;
+  return true;
 }
 
 function renderLine(lineIdx, wordIdx) {
@@ -72,19 +110,16 @@ function showWord(idx) {
   const w = words[idx];
   const pic = pictureFor(w.key);
   const shown = w.text.replace(/^[^\w']+|[^\w'!?]+$/g, '');
-  $('word').textContent = shown;
+  // Words with no photo of their own get a small emoji accent in the caption when one fits.
+  $('word').textContent = pic.kind === 'text' && pic.emoji && shown.length > 3 ? `${pic.emoji} ${shown}` : shown;
   renderLine(w.line, idx);
-
-  const img = pic.kind === 'photo' && readyPhoto(pic.photo);
-  if (img) setPicture(img, pic.photo.credit);
-  else if (pic.kind !== 'glue') setCard(shown, pic.emoji, false);
-  // A glue word leaves a photo alone; on a text card it just becomes the (muted) word.
-  else if ($('stage').classList.contains('text')) setCard(shown, '', true);
 }
 
 function tick() {
   const t = source.time;
   const idx = wordAt(words, t - offset);
+  const sc = sceneAt(t - offset);
+  if (sc !== sceneIdx && sc >= 0 && showScene(scenes[sc])) sceneIdx = sc;
   if (idx !== current) {
     current = idx;
     if (idx >= 0) showWord(idx);
@@ -169,8 +204,14 @@ async function begin(lrc, makeSource) {
   words = built;
   setOffset(0);
   const keys = words.map((w) => w.key);
+  for (const id of ['layerA', 'layerB']) $(id).classList.remove('on'); // fade out the last song's photo
+  $('credit').hidden = true;
+  buildScenes();
   preloadPhotos(keys);
-  lookUpPhotos(keys).then(() => preloadPhotos(keys));
+  lookUpPhotos(keys).then(() => {
+    buildScenes(); // rare words that just got photos join the plan
+    preloadPhotos(keys);
+  });
   $('bar').hidden = false;
   $('setup').close();
   await source.play()?.catch?.(() => {}); // autoplay may be blocked; the play button still works
