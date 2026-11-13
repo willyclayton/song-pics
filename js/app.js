@@ -1,6 +1,7 @@
 import { parseLRC, buildWords, wordAt } from './lyrics.js';
 import { TimerSource, FileSource, YouTubeSource, youTubeId } from './players.js';
 import { loadPictures, pictureFor, readyPhoto, preloadPhotos, lookUpPhotos } from './visuals.js';
+import { WordsView, STYLES, STYLE_NAMES } from './wordsview.js';
 import { searchSongs, findLyrics, findVideos, rankPairs, youTubeKey } from './finder.js';
 
 const $ = (id) => document.getElementById(id);
@@ -29,6 +30,7 @@ let sceneIdx = -2;
 let scrubbing = false;
 let candidates = []; // ranked { video, lyrics, diff } pairs for the chosen song
 let candidateIdx = 0;
+const view = new WordsView($('wordsView'));
 let loadId = 0; // guards against a slow lookup finishing after a newer one started
 
 // ---------- stage ----------
@@ -118,8 +120,11 @@ function showWord(idx) {
 function tick() {
   const t = source.time;
   const idx = wordAt(words, t - offset);
-  const sc = sceneAt(t - offset);
-  if (sc !== sceneIdx && sc >= 0 && showScene(scenes[sc])) sceneIdx = sc;
+  if (wordsMode) view.update(words, lines, idx, t - offset);
+  else {
+    const sc = sceneAt(t - offset);
+    if (sc !== sceneIdx && sc >= 0 && showScene(scenes[sc])) sceneIdx = sc;
+  }
   if (idx !== current) {
     current = idx;
     if (idx >= 0) showWord(idx);
@@ -141,10 +146,56 @@ function tick() {
 
 // ---------- controls ----------
 
+// ---------- view: pictures or words ----------
+
+const saved = (key, fallback) => {
+  try {
+    return localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+const save = (key, value) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+};
+
+let wordsMode = false;
+function setMode(words_) {
+  wordsMode = words_;
+  document.body.classList.toggle('words-mode', wordsMode);
+  $('mode').textContent = wordsMode ? 'View: Words' : 'View: Pictures';
+  $('style').hidden = !wordsMode;
+  save('songpics.mode', wordsMode ? 'words' : 'pictures');
+  view.reset();
+  sceneIdx = -2;
+  if (!wordsMode) loadPhotos();
+}
+function setStyle(style) {
+  view.setStyle(style);
+  $('style').textContent = `Style: ${STYLE_NAMES[view.style]}`;
+  save('songpics.style', view.style);
+}
+$('mode').onclick = () => setMode(!wordsMode);
+$('style').onclick = () => setStyle(STYLES[(STYLES.indexOf(view.style) + 1) % STYLES.length]);
+
+// Photos are only fetched when the pictures view is in use.
+function loadPhotos() {
+  if (!words.length) return;
+  const keys = words.map((w) => w.key);
+  preloadPhotos(keys);
+  lookUpPhotos(keys).then(() => {
+    buildScenes(); // rare words that just got photos join the plan
+    preloadPhotos(keys);
+  });
+}
+
 function setOffset(value) {
   offset = Math.round(value * 100) / 100;
   $('offset').textContent = `sync ${offset > 0 ? '+' : ''}${offset.toFixed(1)}s`;
   current = -2;
+  view.reset();
 }
 
 $('playBtn').onclick = () => (source.playing ? source.pause() : source.play());
@@ -203,15 +254,11 @@ async function begin(lrc, makeSource) {
   lines = parsed;
   words = built;
   setOffset(0);
-  const keys = words.map((w) => w.key);
   for (const id of ['layerA', 'layerB']) $(id).classList.remove('on'); // fade out the last song's photo
   $('credit').hidden = true;
+  view.reset();
   buildScenes();
-  preloadPhotos(keys);
-  lookUpPhotos(keys).then(() => {
-    buildScenes(); // rare words that just got photos join the plan
-    preloadPhotos(keys);
-  });
+  if (!wordsMode) loadPhotos();
   $('bar').hidden = false;
   $('setup').close();
   await source.play()?.catch?.(() => {}); // autoplay may be blocked; the play button still works
@@ -341,5 +388,7 @@ $('demo').onclick = () => {
 };
 
 await loadPictures();
+setStyle(saved('songpics.style', 'stack'));
+setMode(saved('songpics.mode', 'pictures') === 'words');
 $('setup').showModal();
 requestAnimationFrame(tick);

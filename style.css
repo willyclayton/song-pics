@@ -37,6 +37,30 @@ body {
   .layer img { animation: none; }
 }
 
+/* Words view: lyrics only, set in type */
+.words-view { position: absolute; inset: 0; padding: 5vh 6vw; overflow: hidden; display: none; font-weight: 800; line-height: 1.12; letter-spacing: -0.02em; }
+.words-mode .words-view { display: block; }
+.words-mode .layer, .words-mode .caption { display: none; }
+.words-view .w.new { animation: rise 0.22s ease-out; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(0.25em); }
+  to { opacity: 1; transform: none; }
+}
+.words-view .now { color: var(--accent); }
+.words-view[data-style="stack"] .w { display: block; width: fit-content; text-transform: uppercase; white-space: nowrap; }
+.words-view[data-style="stack"] .gap { margin-top: 0.45em; }
+.words-view[data-style="one"] { display: none; place-items: center; text-align: center; }
+.words-mode .words-view[data-style="one"] { display: grid; }
+.words-view[data-style="one"] .w { white-space: nowrap; }
+.words-view .row { display: block; font-size: clamp(24px, 5.4vh, 54px); margin-bottom: 0.4em; }
+.words-view[data-style="lines"] .future { opacity: 0.3; }
+.words-view[data-style="typewriter"] { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-weight: 600; letter-spacing: 0; }
+.words-view[data-style="typewriter"] .row { font-size: clamp(20px, 4.4vh, 44px); }
+.words-view[data-style="typewriter"] .now { color: var(--text); }
+.words-view[data-style="typewriter"] .future, .words-view .rest { visibility: hidden; }
+.words-view .cursor { display: inline-block; width: 0; height: 1em; vertical-align: -0.12em; outline: 0.06em solid var(--accent); margin: 0 0.04em; }
+@media (prefers-reduced-motion: reduce) { .words-view .w.new { animation: none; } }
+
 /* Closed-caption style text over the bottom of the picture */
 .caption {
   position: absolute;

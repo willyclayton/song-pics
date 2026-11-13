@@ -19,6 +19,8 @@ No build step: it is plain HTML, CSS and JavaScript modules, so any static host 
 - **Word timing**: synced lyrics are timed per line, so each word's time is estimated by spreading the line across its syllables.
 - **Pictures** (`js/visuals.js`): each word looks for a real photo in the catalogue first, then a hand-picked emoji, then one of about 4,000 emoji matched by name. Small glue words ("the", "of") keep the previous picture on screen. A song's photos are loaded before its words are sung.
 
+- **Words view** (`js/wordsview.js`): the "View" button switches from pictures to a lyrics-only view, and "Style" cycles through Stack, Typewriter, One word and Lines. Text builds up with the song and clears when the screen is full. Both choices are remembered.
+
 ## The picture catalogue
 
 - `data/word-freq.json` ranks the words used in about 3,000 well-known songs (`npm run build:words`).
