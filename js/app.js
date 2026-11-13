@@ -1,6 +1,6 @@
 import { parseLRC, buildWords, wordAt } from './lyrics.js';
 import { TimerSource, FileSource, YouTubeSource, youTubeId } from './players.js';
-import { loadEmoji, pictureFor, cachedPhoto, prefetchPhotos } from './visuals.js';
+import { loadPictures, pictureFor, readyPhoto, preloadPhotos } from './visuals.js';
 import { searchSongs, findLyrics, findVideos, rankPairs, youTubeKey } from './finder.js';
 
 const $ = (id) => document.getElementById(id);
@@ -32,10 +32,19 @@ let loadId = 0; // guards against a slow lookup finishing after a newer one star
 // ---------- stage ----------
 
 function showIdle(text = '') {
-  $('picture').textContent = text ? '🎵' : '';
   $('word').textContent = '';
-  $('word').classList.remove('solo');
   $('line').textContent = text;
+}
+
+function setPicture(node, credit) {
+  const box = $('picture');
+  if (box.firstChild === node) return;
+  box.replaceChildren(node);
+  box.classList.remove('pop');
+  void box.offsetWidth; // restart the animation
+  box.classList.add('pop');
+  $('credit').hidden = !credit;
+  if (credit) $('credit').href = credit;
 }
 
 function renderLine(lineIdx, wordIdx) {
@@ -50,25 +59,13 @@ function renderLine(lineIdx, wordIdx) {
 function showWord(idx) {
   const w = words[idx];
   const pic = pictureFor(w.key);
-  const photo = $('photos').checked && !pic.skip ? cachedPhoto(w.key) : null;
-  const box = $('picture');
-
-  if (photo) {
-    const img = new Image();
-    img.src = photo;
-    img.alt = w.key;
-    img.onerror = () => img.replaceWith(pic.emoji ?? '');
-    box.replaceChildren(img);
-  } else {
-    box.textContent = pic.emoji ?? '';
-  }
-  box.classList.remove('pop');
-  void box.offsetWidth; // restart the animation
-  box.classList.add('pop');
-
   $('word').textContent = w.text.replace(/^[^\w']+|[^\w'!?]+$/g, '');
-  $('word').classList.toggle('solo', !photo && !pic.emoji);
   renderLine(w.line, idx);
+
+  // Glue words and unknown words keep the previous picture on screen.
+  const img = pic.photo && readyPhoto(pic.photo);
+  if (img) setPicture(img, pic.photo.credit);
+  else if (pic.emoji) setPicture(document.createTextNode(pic.emoji), null);
 }
 
 function tick() {
@@ -117,10 +114,8 @@ $('tap').onclick = () => {
   const near = lines.reduce((a, b) => (Math.abs(b.time + offset - t) < Math.abs(a.time + offset - t) ? b : a));
   setOffset(t - near.time);
 };
-$('photos').onchange = () => {
-  if ($('photos').checked) prefetchPhotos(words.map((w) => w.key));
-  current = -2;
-};
+// Tapping the picture hides or shows the controls, for a true full-screen view.
+$('stage').onclick = () => $('bar').classList.toggle('tucked');
 $('change').onclick = () => {
   source.pause();
   $('setup').showModal();
@@ -159,7 +154,7 @@ async function begin(lrc, makeSource) {
   lines = parsed;
   words = built;
   setOffset(0);
-  if ($('photos').checked) prefetchPhotos(words.map((w) => w.key));
+  preloadPhotos(words.map((w) => w.key));
   $('bar').hidden = false;
   $('setup').close();
   await source.play()?.catch?.(() => {}); // autoplay may be blocked; the play button still works
@@ -225,7 +220,7 @@ async function playSong(song) {
     candidates = [];
     await begin(best.lrc, () => (url ? new YouTubeSource(youTubeId(url), $('yt')) : file ? new FileSource(file) : new TimerSource()));
     if (!url && !file && !$('notice').textContent) {
-      notice(key ? 'No playable YouTube audio found for this song, so it is running silently.' : 'Running silently. Add a YouTube key under Change song → Settings to get the audio automatically.');
+      notice(key ? 'No playable YouTube audio found for this song, so it is running silently.' : 'Running silently. No YouTube key is set, so there is no audio.');
     } else if (url || file) notice('');
   } catch (err) {
     if (mine === loadId) status(err.message, true);
@@ -288,6 +283,6 @@ $('demo').onclick = () => {
   begin(DEMO_LRC, () => new TimerSource());
 };
 
-await loadEmoji();
+await loadPictures();
 $('setup').showModal();
 requestAnimationFrame(tick);

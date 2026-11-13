@@ -18,72 +18,69 @@ body {
   overflow: hidden;
 }
 
-#stage {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2vh;
-  padding: 16px;
-  text-align: center;
-}
+#stage { flex: 1; min-height: 0; position: relative; overflow: hidden; cursor: pointer; }
 .picture {
-  height: 42vh;
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  font-size: min(34vh, 60vw);
+  font-size: min(46vh, 70vw);
   line-height: 1;
+  padding-bottom: 18vh;
 }
-.picture img {
-  max-height: 42vh;
-  max-width: min(90vw, 720px);
-  border-radius: 20px;
-  object-fit: cover;
-  box-shadow: 0 20px 60px #0008;
-}
-.picture.pop > * { animation: pop 0.18s ease-out; }
+.picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.picture.pop > * { animation: pop 0.2s ease-out; }
 @keyframes pop {
-  from { transform: scale(0.8); opacity: 0.3; }
-  to { transform: scale(1); opacity: 1; }
+  from { opacity: 0.35; transform: scale(1.03); }
+  to { opacity: 1; transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) { .picture.pop > * { animation: none; } }
-.word {
-  font-size: clamp(40px, 9vh, 96px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  min-height: 1.2em;
-  overflow-wrap: anywhere;
-}
-.word.solo { font-size: clamp(64px, 18vh, 180px); color: var(--muted); }
-.line {
-  font-size: clamp(16px, 2.6vh, 24px);
-  color: var(--muted);
-  min-height: 1.5em;
-  max-width: 60ch;
-}
-.line .past { color: #c9cde6; }
-.line .now { color: var(--accent); font-weight: 700; }
 
-.yt { position: fixed; right: 12px; top: 12px; border-radius: 12px; overflow: hidden; line-height: 0; }
-.yt:empty { display: none; }
+/* Closed-caption style text over the bottom of the picture */
+.caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 18vh 16px 18px;
+  text-align: center;
+  background: linear-gradient(to top, #000d 0%, #0009 55%, #0000 100%);
+  text-shadow: 0 2px 8px #000;
+  pointer-events: none;
+}
+.word { font-size: clamp(44px, 11vh, 110px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; min-height: 1.05em; overflow-wrap: anywhere; }
+.line { font-size: clamp(18px, 3.2vh, 30px); color: #d5d8ea; min-height: 1.5em; margin-top: 6px; }
+.line .past { color: #fff; }
+.line .now { color: var(--accent); font-weight: 700; }
+.credit { position: absolute; right: 8px; bottom: 4px; font-size: 11px; color: #fff8; pointer-events: auto; text-shadow: none; }
+.credit[hidden] { display: none; }
 
 .bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
+  gap: 14px;
+  padding: 10px 14px;
   background: var(--panel);
   border-top: 1px solid var(--line);
-  flex-wrap: wrap;
 }
 .bar[hidden] { display: none; }
-.bar #seek { flex: 1; min-width: 120px; accent-color: var(--accent); }
+/* Collapsed rather than removed, so the YouTube player keeps playing while hidden. */
+.bar.tucked { height: 0; padding: 0; border: 0; overflow: hidden; }
+.yt { flex: none; border-radius: 10px; overflow: hidden; line-height: 0; }
+.yt:empty { display: none; }
+.controls { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.transport { display: flex; align-items: center; gap: 12px; }
+.transport #seek { flex: 1; min-width: 0; accent-color: var(--accent); }
+.buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .clock { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 4ch; }
 .sync { display: flex; align-items: center; gap: 6px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sync span { min-width: 9ch; text-align: center; }
-.toggle { color: var(--muted); display: flex; align-items: center; gap: 6px; }
+@media (max-width: 640px) {
+  .bar { align-items: flex-start; gap: 10px; padding: 8px 10px; }
+  .yt iframe { width: 150px; height: 85px; }
+  .buttons button { padding: 7px 10px; font-size: 14px; }
+  .sync span { min-width: 8ch; font-size: 14px; }
+}
 
 button, input, textarea {
   font: inherit;
@@ -129,7 +126,7 @@ dialog h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; 
 .status.error { color: #ff8a8a; }
 .notice { margin: 0; padding: 8px 16px; background: #3a2f10; color: #ffe29a; font-size: 14px; text-align: center; }
 .notice[hidden] { display: none; }
-.match { color: var(--muted); font-size: 13px; flex-basis: 100%; }
+.match { color: var(--muted); font-size: 13px; }
 .match:empty { display: none; }
 dialog a { color: var(--accent); }
 details { margin-top: 8px; color: var(--muted); }

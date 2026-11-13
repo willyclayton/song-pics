@@ -1,8 +1,8 @@
-// Word -> picture. Three layers, first hit wins:
-//   1. PICKS: hand-chosen pictures for words that show up in nearly every song.
-//   2. data/emoji.json: ~4,000 words generated from emoji names and keywords.
-//   3. (optional) a photo looked up on Wikimedia Commons, cached in the browser.
-// Words in SKIP are glue words with nothing to picture; only the word itself is shown.
+// Word -> picture. First hit wins:
+//   1. data/catalog.json: real photos, chosen per word in scripts/concepts.mjs.
+//   2. PICKS: hand-chosen emoji for words that show up in nearly every song.
+//   3. data/emoji.json: ~4,000 words generated from emoji names and keywords.
+// Words in SKIP are glue words with nothing to picture; the previous picture stays up.
 
 const PICKS = {
   // people
@@ -31,8 +31,9 @@ const SKIP = new Set(
 );
 
 let emoji = {};
-export async function loadEmoji() {
-  emoji = await (await fetch('data/emoji.json')).json();
+let catalog = { images: [], words: {} };
+export async function loadPictures() {
+  [emoji, catalog] = await Promise.all(['data/emoji.json', 'data/catalog.json'].map((u) => fetch(u).then((r) => r.json())));
 }
 
 function stems(k) {
@@ -57,60 +58,49 @@ function stems(k) {
   return out;
 }
 
-// Returns { emoji } for a word, { skip: true } for glue words, or {} when nothing matches.
+// Returns { photo: { src, credit }, emoji } for a word (either may be missing),
+// or { skip: true } for glue words.
 export function pictureFor(key) {
-  if (SKIP.has(key)) return { skip: true };
-  for (const s of stems(key)) {
-    if (Object.hasOwn(PICKS, s)) return { emoji: PICKS[s] };
-  }
-  for (const s of stems(key)) {
-    if (SKIP.has(s)) return { skip: true };
-    if (Object.hasOwn(emoji, s)) return { emoji: emoji[s] };
-  }
-  return {};
+  const forms = stems(key);
+  const out = {};
+  const hit = forms.find((s) => Object.hasOwn(catalog.words, s));
+  if (hit) {
+    const image = catalog.images[catalog.words[hit]];
+    out.photo = { src: image.src, credit: image.credit };
+  } else if (forms.some((s) => SKIP.has(s))) return { skip: true };
+  const pick = forms.find((s) => Object.hasOwn(PICKS, s));
+  const generic = forms.find((s) => Object.hasOwn(emoji, s));
+  out.emoji = pick ? PICKS[pick] : generic ? emoji[generic] : undefined;
+  return out;
 }
 
-// ---- Optional photos (Wikimedia Commons: free to use, no API key) ----
+// ---- photo loading ----
 
-const CACHE_KEY = 'songpics.photos.v1';
-let photoCache = {};
-try {
-  photoCache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-} catch {}
-const pending = new Map();
+const loaded = new Map(); // src -> HTMLImageElement, kept so the browser holds the decoded photo
 
-export const cachedPhoto = (key) => photoCache[key] || null;
-
-export function fetchPhoto(key) {
-  if (key in photoCache) return Promise.resolve(photoCache[key]);
-  if (pending.has(key)) return pending.get(key);
-  const url =
-    'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*' +
-    '&generator=search&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=640' +
-    `&gsrsearch=${encodeURIComponent(`${key} filetype:bitmap`)}`;
-  const p = fetch(url)
-    .then((r) => r.json())
-    .then((data) => {
-      const page = Object.values(data.query?.pages ?? {})[0];
-      const src = page?.imageinfo?.[0]?.thumburl ?? null;
-      photoCache[key] = src;
-      try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify(photoCache));
-      } catch {}
-      if (src) new Image().src = src; // warm the browser cache before the word is sung
-      return src;
-    })
-    .catch(() => null)
-    .finally(() => pending.delete(key));
-  pending.set(key, p);
-  return p;
+function load(src) {
+  if (!loaded.has(src)) {
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+    loaded.set(src, img);
+  }
+  return loaded.get(src);
 }
 
-// Looks up photos for every picturable word in a song ahead of time, a few at a time.
-export async function prefetchPhotos(keys) {
-  const todo = [...new Set(keys)].filter((k) => !pictureFor(k).skip && !(k in photoCache));
-  const workers = Array.from({ length: 4 }, async () => {
-    while (todo.length) await fetchPhoto(todo.shift());
+// The photo element for a word if it has finished loading, otherwise null (and starts loading it).
+export function readyPhoto(photo) {
+  const img = load(photo.src);
+  return img.complete && img.naturalWidth ? img : null;
+}
+
+// Fetches every photo a song needs before its words are sung, in the order they appear.
+export async function preloadPhotos(keys) {
+  const todo = [...new Set(keys.map((k) => pictureFor(k).photo?.src).filter(Boolean))].filter((src) => !loaded.has(src));
+  const one = (src) => new Promise((done) => {
+    const img = load(src);
+    if (img.complete) return done();
+    img.onload = img.onerror = done;
   });
-  await Promise.all(workers);
+  await Promise.all(Array.from({ length: 4 }, async () => { while (todo.length) await one(todo.shift()); }));
 }

@@ -47,7 +47,7 @@ export async function findLyrics(song) {
 
 // ---- videos (YouTube Data API) ----
 
-export const youTubeKey = () => YT_KEY || localStorage.getItem('songpics.ytkey') || '';
+export const youTubeKey = () => localStorage.getItem('songpics.ytkey') || YT_KEY;
 
 export function isoSeconds(iso) {
   const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso || '');
@@ -89,7 +89,10 @@ export async function findVideos(song, key) {
 const OFF_VERSION = /\b(live|cover|karaoke|instrumental|remix|reaction|lesson|tutorial|sped up|slowed|nightcore|8d|acoustic|concert|tribute|drum|guitar|piano|bass)\b/i;
 
 function videoPenalty(video, song) {
-  let p = video.studio ? 0 : 2;
+  // Label studio audio is best, then the artist's own channel, then everyone else.
+  const official = norm(video.channel).replace(/ /g, '').includes(norm(song.artist).replace(/ /g, ''));
+  let p = video.studio ? 0 : official ? 1 : 2;
+  if (/\baudio\b/i.test(video.title)) p -= 0.5;
   const title = norm(video.title);
   if (!title.includes(norm(clean(song.title)))) p += 40;
   const odd = OFF_VERSION.exec(video.title);

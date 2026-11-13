@@ -98,8 +98,8 @@ export class YouTubeSource {
           mount.replaceChildren(holder);
           this.player = new YT.Player(holder, {
             videoId,
-            width: 280,
-            height: 200,
+            width: 200,
+            height: 113,
             playerVars: { playsinline: 1, rel: 0 },
             events: {
               onReady: () => resolve(),

@@ -1,4 +1,4 @@
-// Optional: put a YouTube Data API key here so every device finds audio automatically.
-// Restrict the key to this site's address in the Google Cloud console before committing it.
-// If left empty, the key saved in the app's Settings (this browser only) is used.
-export const YT_KEY = '';
+// YouTube Data API key used to find each song's audio. It is visible to anyone who opens the
+// site, so in the Google Cloud console restrict it to this site's address and to the
+// YouTube Data API. A key saved under Settings in the app overrides this one.
+export const YT_KEY = 'AIzaSyBOcniFQPfFWRswRZJau1V3hvh6jbN1g90';

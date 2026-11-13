@@ -7,30 +7,37 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main id="stage" aria-live="off">
+    <main id="stage" title="Tap to hide or show the controls">
       <div id="picture" class="picture"></div>
-      <div id="word" class="word">Song Pics</div>
-      <div id="line" class="line">Pick a song to see every word as a picture.</div>
+      <div class="caption">
+        <div id="word" class="word">Song Pics</div>
+        <div id="line" class="line">Pick a song to see every word as a picture.</div>
+        <a id="credit" class="credit" target="_blank" rel="noopener" hidden>photo credit</a>
+      </div>
     </main>
-
-    <div id="yt" class="yt"></div>
 
     <p id="notice" class="notice" role="status" hidden></p>
 
     <footer id="bar" class="bar" hidden>
-      <button id="playBtn" class="round" aria-label="Play">▶</button>
-      <span id="clock" class="clock">0:00</span>
-      <input id="seek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Position" />
-      <div class="sync" title="Shift the lyrics if the pictures run early or late">
-        <button id="earlier" aria-label="Lyrics earlier">−</button>
-        <span id="offset">sync 0.0s</span>
-        <button id="later" aria-label="Lyrics later">+</button>
-        <button id="tap" title="Tap the moment a new line starts being sung and the lyrics snap to it">Tap sync</button>
+      <div id="yt" class="yt"></div>
+      <div class="controls">
+        <div class="transport">
+          <button id="playBtn" class="round" aria-label="Play">▶</button>
+          <span id="clock" class="clock">0:00</span>
+          <input id="seek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Position" />
+        </div>
+        <div class="buttons">
+          <div class="sync" title="Shift the lyrics if the pictures run early or late">
+            <button id="earlier" aria-label="Lyrics earlier">−</button>
+            <span id="offset">sync 0.0s</span>
+            <button id="later" aria-label="Lyrics later">+</button>
+            <button id="tap" title="Tap the moment a new line starts being sung and the lyrics snap to it">Tap sync</button>
+          </div>
+          <button id="next" hidden title="Try a different recording of this song">Other version</button>
+          <button id="change">Change song</button>
+        </div>
+        <span id="match" class="match"></span>
       </div>
-      <label class="toggle"><input id="photos" type="checkbox" /> Photos</label>
-      <button id="next" hidden title="Try a different recording of this song">Other version</button>
-      <button id="change">Change song</button>
-      <span id="match" class="match"></span>
     </footer>
 
     <dialog id="setup">
@@ -55,9 +62,7 @@
       <details>
         <summary>Settings</summary>
         <p class="hint">
-          Finding the audio automatically needs a free YouTube Data API key
-          (<a href="https://developers.google.com/youtube/v3/getting-started" target="_blank" rel="noopener">how to get one</a>).
-          It is saved in this browser only.
+Use a different YouTube Data API key in this browser (optional).
         </p>
         <div class="row"><input id="ytKey" placeholder="YouTube Data API key" autocomplete="off" /></div>
       </details>

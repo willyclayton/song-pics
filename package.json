@@ -5,10 +5,13 @@
   "scripts": {
     "start": "python3 -m http.server 5173",
     "build:emoji": "node scripts/build-emoji.mjs",
+    "build:words": "node scripts/word-freq.mjs",
+    "build:catalog": "node scripts/build-catalog.mjs",
     "test": "node --test"
   },
   "devDependencies": {
     "emojilib": "^4.0.0",
+    "sharp": "^0.35.5",
     "unicode-emoji-json": "^0.8.0"
   }
 }
