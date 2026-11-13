@@ -1,8 +1,7 @@
-// Word -> picture. First hit wins:
-//   1. data/catalog.json: real photos, chosen per word in scripts/concepts.mjs.
-//   2. PICKS: hand-chosen emoji for words that show up in nearly every song.
-//   3. data/emoji.json: ~4,000 words generated from emoji names and keywords.
-// Words in SKIP are glue words with nothing to picture; the previous picture stays up.
+// Word -> how to show it. See pictureFor() below.
+//   data/catalog.json: real photos, chosen per word in scripts/concepts.mjs.
+//   PICKS and data/emoji.json: emoji used as an accent beside words that have no photo.
+//   SKIP: glue words with nothing to picture.
 
 const PICKS = {
   // people
@@ -32,8 +31,12 @@ const SKIP = new Set(
 
 let emoji = {};
 let catalog = { images: [], words: {} };
+let common = new Set(); // the 2,500 most-used lyric words; ones without a catalogue photo are "idea" words
 export async function loadPictures() {
-  [emoji, catalog] = await Promise.all(['data/emoji.json', 'data/catalog.json'].map((u) => fetch(u).then((r) => r.json())));
+  const [e, c, w] = await Promise.all(['data/emoji.json', 'data/catalog.json', 'data/common-words.json'].map((u) => fetch(u).then((r) => r.json())));
+  emoji = e;
+  catalog = c;
+  common = new Set(w);
 }
 
 function stems(k) {
@@ -58,20 +61,71 @@ function stems(k) {
   return out;
 }
 
-// Returns { photo: { src, credit }, emoji } for a word (either may be missing),
-// or { skip: true } for glue words.
+// How a word is shown:
+//   kind 'photo' - full-screen photo (from the catalogue, or looked up for this song)
+//   kind 'text'  - an idea word with no photo: shown as big text, with `emoji` as an accent if any
+//   kind 'glue'  - a small connecting word: only the caption changes
 export function pictureFor(key) {
   const forms = stems(key);
-  const out = {};
   const hit = forms.find((s) => Object.hasOwn(catalog.words, s));
   if (hit) {
     const image = catalog.images[catalog.words[hit]];
-    out.photo = { src: image.src, credit: image.credit };
-  } else if (forms.some((s) => SKIP.has(s))) return { skip: true };
+    return { kind: 'photo', photo: { src: image.src, credit: image.credit } };
+  }
+  if (forms.some((s) => SKIP.has(s))) return { kind: 'glue' };
+  const found = forms.map((s) => lookedUp[s]).find(Boolean);
+  if (found) return { kind: 'photo', photo: found };
   const pick = forms.find((s) => Object.hasOwn(PICKS, s));
   const generic = forms.find((s) => Object.hasOwn(emoji, s));
-  out.emoji = pick ? PICKS[pick] : generic ? emoji[generic] : undefined;
-  return out;
+  return { kind: 'text', emoji: pick ? PICKS[pick] : generic ? emoji[generic] : undefined };
+}
+
+// ---- photos for rare words, looked up on Wikipedia when a song loads ----
+
+const LOOKUP_KEY = 'songpics.lookup.v1';
+let lookedUp = {}; // word -> { src, credit }, or 0 when Wikipedia has nothing usable
+try {
+  lookedUp = JSON.parse(localStorage.getItem(LOOKUP_KEY) || '{}');
+} catch {}
+
+// Common words were already decided by hand (photo or not), so only uncommon words are
+// looked up: those are mostly concrete nouns, which is what an encyclopedia pictures well.
+function worthLookingUp(key) {
+  if (!/^[a-z]{4,}$/.test(key) || key in lookedUp) return false;
+  const forms = stems(key);
+  return !forms.some((s) => common.has(s) || SKIP.has(s) || Object.hasOwn(catalog.words, s));
+}
+
+export async function lookUpPhotos(keys) {
+  const todo = [...new Set(keys)].filter(worthLookingUp).slice(0, 100);
+  const width = Math.min(screen.width, screen.height) * (window.devicePixelRatio || 1) < 900 ? 500 : 960;
+  for (let i = 0; i < todo.length; i += 50) {
+    const batch = todo.slice(i, i + 50);
+    const url =
+      'https://en.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&origin=*&redirects=1' +
+      `&prop=pageimages|pageprops&piprop=thumbnail|name&pilicense=free&pithumbsize=${width}&ppprop=disambiguation` +
+      `&titles=${encodeURIComponent(batch.join('|'))}`;
+    try {
+      const { query } = await (await fetch(url)).json();
+      const asked = {}; // final page title -> the word we asked about
+      for (const n of query.normalized ?? []) asked[n.to] = n.from;
+      for (const r of query.redirects ?? []) asked[r.to] = asked[r.from] ?? r.from;
+      for (const w of batch) lookedUp[w] = 0;
+      for (const page of query.pages ?? []) {
+        const word = asked[page.title] ?? page.title;
+        if (!page.thumbnail || page.pageprops?.disambiguation !== undefined || !(word in lookedUp)) continue;
+        lookedUp[word] = {
+          src: page.thumbnail.source.split('?')[0],
+          credit: `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(page.pageimage)}`,
+        };
+      }
+    } catch {
+      break; // offline or rate-limited: those words simply show as text this time
+    }
+  }
+  try {
+    localStorage.setItem(LOOKUP_KEY, JSON.stringify(lookedUp));
+  } catch {}
 }
 
 // ---- photo loading ----

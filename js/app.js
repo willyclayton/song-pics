@@ -1,6 +1,6 @@
 import { parseLRC, buildWords, wordAt } from './lyrics.js';
 import { TimerSource, FileSource, YouTubeSource, youTubeId } from './players.js';
-import { loadPictures, pictureFor, readyPhoto, preloadPhotos } from './visuals.js';
+import { loadPictures, pictureFor, readyPhoto, preloadPhotos, lookUpPhotos } from './visuals.js';
 import { searchSongs, findLyrics, findVideos, rankPairs, youTubeKey } from './finder.js';
 
 const $ = (id) => document.getElementById(id);
@@ -32,19 +32,31 @@ let loadId = 0; // guards against a slow lookup finishing after a newer one star
 // ---------- stage ----------
 
 function showIdle(text = '') {
+  $('stage').classList.remove('text');
   $('word').textContent = '';
   $('line').textContent = text;
 }
 
-function setPicture(node, credit) {
+function setPicture(img, credit) {
   const box = $('picture');
-  if (box.firstChild === node) return;
-  box.replaceChildren(node);
-  box.classList.remove('pop');
-  void box.offsetWidth; // restart the animation
-  box.classList.add('pop');
-  $('credit').hidden = !credit;
-  if (credit) $('credit').href = credit;
+  if (box.firstChild !== img) {
+    box.replaceChildren(img);
+    box.classList.remove('pop');
+    void box.offsetWidth; // restart the animation
+    box.classList.add('pop');
+  }
+  $('credit').href = credit;
+  $('stage').classList.remove('text');
+}
+
+// Big centred word over the blurred previous photo, for words that have no photo of their own.
+function setCard(word, emoji, glue) {
+  $('cardEmoji').textContent = emoji ?? '';
+  $('cardWord').textContent = word;
+  // Size the word to fit the screen width on one line.
+  $('cardWord').style.fontSize = `min(${glue ? 9 : 15}vh, ${(150 / Math.max(word.length, 3)).toFixed(1)}vw)`;
+  $('card').classList.toggle('glue', glue);
+  $('stage').classList.add('text');
 }
 
 function renderLine(lineIdx, wordIdx) {
@@ -59,13 +71,15 @@ function renderLine(lineIdx, wordIdx) {
 function showWord(idx) {
   const w = words[idx];
   const pic = pictureFor(w.key);
-  $('word').textContent = w.text.replace(/^[^\w']+|[^\w'!?]+$/g, '');
+  const shown = w.text.replace(/^[^\w']+|[^\w'!?]+$/g, '');
+  $('word').textContent = shown;
   renderLine(w.line, idx);
 
-  // Glue words and unknown words keep the previous picture on screen.
-  const img = pic.photo && readyPhoto(pic.photo);
+  const img = pic.kind === 'photo' && readyPhoto(pic.photo);
   if (img) setPicture(img, pic.photo.credit);
-  else if (pic.emoji) setPicture(document.createTextNode(pic.emoji), null);
+  else if (pic.kind !== 'glue') setCard(shown, pic.emoji, false);
+  // A glue word leaves a photo alone; on a text card it just becomes the (muted) word.
+  else if ($('stage').classList.contains('text')) setCard(shown, '', true);
 }
 
 function tick() {
@@ -154,7 +168,9 @@ async function begin(lrc, makeSource) {
   lines = parsed;
   words = built;
   setOffset(0);
-  preloadPhotos(words.map((w) => w.key));
+  const keys = words.map((w) => w.key);
+  preloadPhotos(keys);
+  lookUpPhotos(keys).then(() => preloadPhotos(keys));
   $('bar').hidden = false;
   $('setup').close();
   await source.play()?.catch?.(() => {}); // autoplay may be blocked; the play button still works

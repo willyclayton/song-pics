@@ -3,6 +3,8 @@
 // into its lead photo. Words are base forms; the app also tries plurals and -ing/-ed endings.
 // Priorities come from data/word-freq.json (most common words in ~3,000 well-known songs).
 // A subject starting with "File:" names an exact Wikimedia Commons file instead of an article.
+// Only words with an obvious picture belong here. Broad words (know, want, maybe, up) are left
+// out on purpose: the app shows those as big text instead of forcing a loosely related photo.
 
 export const CONCEPTS = `
 # people
@@ -42,34 +44,19 @@ fool, funny : Jester
 band : Rock band
 dj : Disc jockey
 human : Human
-master : Chess master
-stranger : Silhouette
 soldier : Soldier
 cowboy : Cowboy
 hero : Superhero
 
 # directions and places
 away : Vanishing point
-up : Hot air balloon
-down : Stairs
 fall, fell : Waterfall
-back, return : U-turn
 home : Cottage
 inside, room : Living room | Room
-outside, out : Outdoor recreation
 over, across : Bridge
-under, beneath, deep, deeper : Underwater diving
-through : Tunnel
-around, round : Carousel
-far : Telescope
-near, close, closer : Hug
-high, higher, top : Mount Everest
-low : Valley
-above : Aerial photography
 edge : Cliff
-where, somewhere, everywhere, nowhere, anywhere, wherever, place : Map
 world, earth : Earth
-way, road : Road
+road : Road
 highway : Highway
 street : Street
 miles : Milestone
@@ -144,8 +131,7 @@ spring : Spring (season)
 autumn : Autumn
 christmas : Christmas tree
 week, year, sunday, saturday, friday : Calendar
-time, hour, late : Clock
-minute, moment, second, quick, fast : Stopwatch
+time, hour, clock : Clock
 forever, always : Infinity
 past, memory, memories, remember, yesterday : Photo album
 future : Crystal ball
@@ -157,7 +143,6 @@ rainbow, colors : Rainbow
 love, loving, lovin, loved, love's : Love lock | Wedding
 heart, heartbeat : Heart symbol
 kiss : Kiss
-hold, holdin, touch : Hand-holding
 happy, happiness, glad, joy : Happiness
 smile : Smile
 laugh : Laughter
@@ -166,7 +151,6 @@ sad, cry, cryin, tear, tears : Crying
 lonely, alone : Solitude
 afraid, scared, fear : Fear
 mad, angry, hate : Anger
-crazy, insane : Roller coaster
 wild : Wildlife
 scream, screaming : The Scream
 pain, hurt : Pain
@@ -184,7 +168,6 @@ peace : Peace symbols
 war : Battle | War
 fight, fighting, hit : Boxing
 die, dead, death, died, dying, kill, killer : Cemetery
-life, live, living, livin, alive : Tree of life
 grow, grown : Seedling
 strong, strength, stronger : Olympic weightlifting
 beautiful, beauty, lovely : Aurora
@@ -192,26 +175,18 @@ pretty : Cherry blossom
 perfect : Rose window
 sweet, candy : Candy
 sugar : Sugar
-good, better, great, fine, nice, okay, alright, yes : Thumb signal
 best, win : Trophy
 cool : Sunglasses
 lie, lies, lying : Pinocchio
 secret, whisper, quiet : Silence | Secrecy | Finger
-dirty, mess : Mud
-clean : Soap
 money, pay, paid, price, buy, bought, spend, rich, million : Money
 gold : Gold
 diamond : Diamond
 fame : Hollywood Walk of Fame
-lose, lost, losing : Maze
-trouble, danger : Warning sign
 promise, swear : Pinky swear
-shame, sorry : Facepalm
 crush : Love letter
 
 # doing things
-go, going, goin, goes : Traffic light
-gone, went : Footprint
 leave, leaving, goodbye, bye : Suitcase
 hello, hey : Waving
 run, running, runnin, runaway : Running
@@ -231,22 +206,15 @@ jump : Jumping
 climb : Climbing
 stand, standing : Standing
 sit, sitting : Chair
-move, moving, movin : Moving company
 shake : Maraca
 turn, turning, turned : Steering wheel
 roll, rolling, rollin, wheel : Wheel
 stop : Stop sign
-wait, waiting, waitin : Waiting room
 stay : Anchor
-start, begin, beginning : Starting blocks
-end : Racing flags
 work, working, job : Construction worker
-make, made, build, built : Construction
-give, gave : Gift
-keep, safe : Safe
+gift : Gift
 catch : Baseball glove
 throw : Pitcher
-pull : Tug of war
 knock, door : Door
 open : Gate
 shut, locked, key : Lock and key
@@ -280,20 +248,16 @@ blues : B.B. King | Blues rock
 bell, ring : Bell
 loud, shout : Megaphone
 hear, heard, listen : Ear
-see, saw, seen, watch, watching, sight, view : Binoculars
-look, looking, lookin, find, found, search, searching : Magnifying glass
+view, sight : Binoculars
+search, searching : Magnifying glass
 eye : Human eye
 blind : Blindfold
-say, said, says, talk, talking, talkin, speak, tell, told, tellin, sayin : Public speaking | Speech
 word : Dictionary
 story, read, book : Book
 write, wrote : Writing
 letter : Letter (message)
-name : Name tag
 call, calling, callin, called, phone : Mobile phone
-ask, why, what, what's, who, who's, how, wonder, question, answer, reason : Question | Curiosity | Riddle
-know, knows, knew, known, mind, brain, understand : Human brain
-think, thinking, thinkin, thought : The Thinker
+mind, brain : Human brain
 learn, learned, school : Classroom
 game : Board game
 play, playing, playin : Playground
@@ -304,7 +268,6 @@ show, scene : Stage (theatre)
 picture, photograph : Camera
 tv : Television set
 news, paper : Newspaper
-plan : Blueprint
 sign : Traffic sign
 speed : Speedometer
 fever, sick : Thermometer
@@ -312,7 +275,6 @@ poison : Poison
 boom, bang, blow up : Explosion
 gun, shot, shoot : Revolver
 chain : Chain
-pieces, piece : Jigsaw puzzle
 
 # body and clothes
 hand : Hand
@@ -355,36 +317,9 @@ eagle : Bald eagle
 dove : Columbidae
 wings : Feather
 
-# very common small words that still deserve a picture
-no, not, never, don't, can't, won't, ain't, didn't, couldn't, wouldn't, doesn't, isn't, wasn't, cannot, stop it : No symbol
-yeah, yea, yeh, yo : Thumb signal
-oh, ooh, ohh, ah, aah, whoa, woah, wow, woo, whoo, hoo : Surprise (emotion)
+# sung syllables
 la, na, da, doo, dum, dee, sha, ba, bop, bum : Eighth note | Musical notation
-like : Like button
-please, thank : Namaste
-change, changes, changed : Chameleon
-help, save : Lifebuoy
-first : Gold medal
-big : Elephant
-little, small, lil, bit : Kitten
-slow, slowly : Snail
-full : Full moon
-maybe, guess : Coin flipping
-nothing, nobody, nothin, empty, none : Ghost town
-someone, somebody, something, somethin : Silhouette
-hard, harder, tough : Anvil
-feel, feeling, feelin, feels, felt : Goose bumps
-want, wanna, need, wanted, desire : Shopping
-come, coming, comin, came, c'mon : Welcome mat | Doormat
-miss, missing : Empty chair | Bench (furniture)
-more, most, much, many, lot : Buffet
-same, twice, again, double : Twin
-different, strange : Black sheep
 alright : Rainbow
-high five, five : High five
-two, couple : Pair of shoes | Tandem bicycle
-three : Three-leaf clover | Shamrock
-one, only, single : Number 1 | Index finger
 
 # colours
 red : Red

@@ -19,22 +19,36 @@ body {
 }
 
 #stage { flex: 1; min-height: 0; position: relative; overflow: hidden; cursor: pointer; }
-.picture {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: min(46vh, 70vw);
-  line-height: 1;
-  padding-bottom: 18vh;
-}
+.picture { position: absolute; inset: 0; transition: filter 0.25s, transform 0.25s; }
 .picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .picture.pop > * { animation: pop 0.2s ease-out; }
 @keyframes pop {
   from { opacity: 0.35; transform: scale(1.03); }
   to { opacity: 1; transform: scale(1); }
 }
-@media (prefers-reduced-motion: reduce) { .picture.pop > * { animation: none; } }
+
+/* Words without a photo: the last photo blurs into a backdrop and the word goes big. */
+#stage.text .picture { filter: blur(16px) brightness(0.4); transform: scale(1.12); }
+.card {
+  position: absolute;
+  inset: 0 0 16vh;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1vh;
+  padding: 16px;
+  text-align: center;
+  text-shadow: 0 2px 12px #000a;
+  pointer-events: none;
+}
+#stage.text .card { display: flex; }
+.card-emoji { font-size: min(16vh, 30vw); line-height: 1.1; }
+.card-emoji:empty { display: none; }
+.card-word { font-weight: 800; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; }
+.card.glue .card-word { opacity: 0.55; }
+#stage.text .word, #stage.text .credit, .picture:empty ~ .caption .credit { display: none; }
+@media (prefers-reduced-motion: reduce) { .picture, .picture.pop > * { animation: none; transition: none; } }
 
 /* Closed-caption style text over the bottom of the picture */
 .caption {
