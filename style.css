@@ -158,3 +158,8 @@ details { margin-top: 8px; color: var(--muted); }
 textarea { width: 100%; margin-top: 8px; resize: vertical; font-family: ui-monospace, monospace; font-size: 13px; }
 .picked { color: var(--accent); margin: 8px 0 0; min-height: 1.4em; }
 .error { color: #ff8a8a; margin: 10px 0 0; min-height: 1.4em; }
+
+.steps { margin: 16px 0 4px; padding-left: 22px; display: grid; gap: 10px; line-height: 1.45; }
+.tutorial-foot { justify-content: space-between; align-items: center; margin-top: 18px; }
+.check { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; cursor: pointer; }
+.check input { width: 18px; height: 18px; }

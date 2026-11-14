@@ -391,4 +391,15 @@ await loadPictures();
 setStyle(saved('songpics.style', 'stack'));
 setMode(saved('songpics.mode', 'pictures') === 'words');
 $('setup').showModal();
+
+// Tutorial: shown on every visit until "Don't show this again" is ticked.
+const TUTORIAL_KEY = 'songpics.tutorial';
+const showTutorial = () => {
+  $('tutorialSkip').checked = saved(TUTORIAL_KEY, '') === 'off';
+  $('tutorial').showModal();
+};
+$('tutorialSkip').onchange = () => save(TUTORIAL_KEY, $('tutorialSkip').checked ? 'off' : 'on');
+$('tutorialClose').onclick = () => $('tutorial').close();
+$('help').onclick = showTutorial;
+if (saved(TUTORIAL_KEY, '') !== 'off') showTutorial();
 requestAnimationFrame(tick);

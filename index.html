@@ -72,7 +72,23 @@ Use a different YouTube Data API key in this browser (optional).
       </details>
 
       <div class="row end">
+        <button id="help" type="button" class="ghost">How it works</button>
         <button id="demo" type="button" class="ghost">Try the demo</button>
+      </div>
+    </dialog>
+
+    <dialog id="tutorial">
+      <h1>How it works</h1>
+      <ol class="steps">
+        <li><b>Pick a song.</b> Search by title or artist and tap a result. The audio and the timed lyrics are found for you.</li>
+        <li><b>Watch.</b> Each word shows as it is sung, with a picture behind it. Tap the picture to hide or show the controls.</li>
+        <li><b>Fix the timing.</b> If the words run early or late, press − or +, or press Tap sync the moment a new line starts.</li>
+        <li><b>Wrong recording?</b> Other version tries a different video of the same song.</li>
+        <li><b>Words only.</b> View switches from pictures to lyrics set in type; Style changes how they appear.</li>
+      </ol>
+      <div class="row end tutorial-foot">
+        <label class="check"><input id="tutorialSkip" type="checkbox" /> Don't show this again</label>
+        <button id="tutorialClose" type="button" class="primary">Got it</button>
       </div>
     </dialog>
 
