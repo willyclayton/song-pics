@@ -28,7 +28,6 @@ family : Family
 lover, darling, romance : Romance (love)
 king : King
 queen : Elizabeth II
-prince : Prince
 lord, pray, prayer, mercy : Prayer
 god : The Creation of Adam
 jesus : Jesus
@@ -36,8 +35,6 @@ angel : Angel
 devil, evil : Devil
 heaven : Heaven
 hell : Hell
-soul, ghost : Ghost
-holy, halo, glory : Halo (religious iconography)
 faith, believe : Christian cross | Cross
 doctor, dr : Physician
 fool, funny : Jester
@@ -64,22 +61,17 @@ town : Town
 city : City
 york : New York City
 country : Rural area
-land : Landscape
 america : Flag of the United States
 california : Golden Gate Bridge
 south, southern, west : Compass
-paradise : Maldives | Bora Bora
-beach : Beach
-sea : Sea
-ocean : Ocean
+beach, paradise : Beach
 river : River
 mountain : Mountain
 hill : Hill
 ground, dirt : Soil
-dust : Dust storm
 sand : Sand
 stone : Rock (geology)
-rock : Rock concert
+rock, beat, drum : Rock concert
 grass : Lawn
 tree : Tree
 flower : Flower
@@ -90,17 +82,14 @@ jungle : Jungle
 field : Field (agriculture)
 desert, heat : Desert
 space : Outer space
-sky, skies : Sky
+sky, skies : Landscape
 island : Island
 forest : Forest
 lake : Lake
 
 # sky, weather, time
-sun : Sun
-sunshine, sunlight, shine, bright : Sunlight
-sunset : Sunset
-dawn, morning, mornin, tomorrow, rise, rising : Sunrise
-day, today : Daylight
+sun, sunset, sunshine, sunlight, shine, bright : Sunset
+dawn, morning, mornin, tomorrow, rise, rising, day, today : Sunrise
 night, tonight : Night
 midnight : Night sky
 moon : Moon
@@ -125,14 +114,13 @@ fire, flame, burn : Fire
 smoke, smokin : Smoke
 water : Drinking water | Body of water
 drop : Drop (liquid)
-wave : Wind wave
+wave, sea, ocean : Wind wave
 summer, summertime : Summer
 spring : Spring (season)
 autumn : Autumn
 christmas : Christmas tree
 week, year, sunday, saturday, friday : Calendar
 time, hour, clock : Clock
-forever, always : Infinity
 past, memory, memories, remember, yesterday : Photo album
 future : Crystal ball
 old, older : Old age
@@ -149,10 +137,9 @@ laugh : Laughter
 fun, party, celebrate : Party
 sad, cry, cryin, tear, tears : Crying
 lonely, alone : Solitude
-afraid, scared, fear : Fear
 mad, angry, hate : Anger
 wild : Wildlife
-scream, screaming : The Scream
+scream, screaming, afraid, scared, fear : The Scream
 pain, hurt : Pain
 broken, broke, break, breaking : Broken heart
 tired, sleep, sleeping : Sleep
@@ -165,7 +152,6 @@ magic : Magic (illusion)
 pride, proud : Peafowl
 free, freedom : Statue of Liberty
 peace : Peace symbols
-war : Battle | War
 fight, fighting, hit : Boxing
 die, dead, death, died, dying, kill, killer : Cemetery
 grow, grown : Seedling
@@ -239,22 +225,17 @@ boogie, groove, funky : Disco
 sing, singing, voice : Singing
 song : Musical notation | Music stand
 music, sound : Orchestra
-radio : Radio
 guitar : Guitar
-beat, drum : Drum kit
 bass : Bass guitar
 rap, rhyme : Rapping
 blues : B.B. King | Blues rock
-bell, ring : Bell
 loud, shout : Megaphone
 hear, heard, listen : Ear
 view, sight : Binoculars
 search, searching : Magnifying glass
 eye : Human eye
-blind : Blindfold
 word : Dictionary
 story, read, book : Book
-write, wrote : Writing
 letter : Letter (message)
 call, calling, callin, called, phone : Mobile phone
 mind, brain : Human brain
@@ -281,13 +262,11 @@ hand : Hand
 arms : Arm
 face : Face
 head : Human head
-hair : Hair
 lips, mouth : Lip
 tongue : Tongue
 teeth : Human tooth
 body : Vitruvian Man
 feet, foot : Foot
-legs : Human leg
 knees : Knee
 finger : Finger
 bones, bone : Human skeleton
